@@ -1,9 +1,9 @@
 from fastapi import FastAPI
-from routers import clientes
+from routers import users
 
 app = FastAPI()
 
-app.include_router(clientes.router)
+app.include_router(users.router)
 
 @app.get("/")
 async def root():

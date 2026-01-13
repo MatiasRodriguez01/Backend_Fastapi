@@ -1,4 +1,4 @@
-def client_schema(user) -> dict:
+def user_schema(user) -> dict:
     return {
         "id": str(user["_id"]),
         "name": str(user["name"]),
@@ -7,5 +7,5 @@ def client_schema(user) -> dict:
     }
 
 
-def clients_schema(clients) -> list: 
-    return [client_schema(client) for client in clients]
+def users_schema(clients) -> list: 
+    return [user_schema(client) for client in clients]
