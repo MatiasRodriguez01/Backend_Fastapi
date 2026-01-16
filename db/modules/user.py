@@ -1,8 +1,6 @@
-from typing import Optional
-from pydantic import BaseModel
+from db.modules.base_module import Base 
 
-class User(BaseModel):
-    id: Optional[str] = None
+class User(Base):
     name: str
     email: str
     url: str
