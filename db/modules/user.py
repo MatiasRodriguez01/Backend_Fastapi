@@ -2,6 +2,9 @@ from db.modules.base_module import Base
 
 
 class User(Base):
-    name: str
+    id: str = ""
+    username: str
+    password: str
     email: str
-    url: str
+    age: int
+
