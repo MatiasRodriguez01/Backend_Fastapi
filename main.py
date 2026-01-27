@@ -5,6 +5,10 @@ app = FastAPI()
 
 app.include_router(clientes.router)
 
+
+
+
+
 @app.get("/")
 async def root():
     return "¡¡HOLA MundoOOO!!"
