@@ -1,4 +1,4 @@
-from db.modules.base_module import Base 
+from api.modules.base_module import Base 
 
 def show_fields(obj) -> list[str]:
     return [key for key in obj.keys() if key != "_id"]

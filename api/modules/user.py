@@ -1,4 +1,4 @@
-from db.modules.base_module import Base 
+from api.modules.base_module import Base 
 
 
 class User(Base):

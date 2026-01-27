@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status, HTTPException
-from db.modules.product import Product
+from api.modules.product import Product
 from bson import ObjectId
 
-from db.schemas.schemas import show_schema, show_schemas
-from db.client import db_client
+from api.schemas.schemas import show_schema, show_schemas
+from infraestructura.db.client import db_client
 
 router = APIRouter(
     prefix="/productos",

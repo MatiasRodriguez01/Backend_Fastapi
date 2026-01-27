@@ -1,12 +1,12 @@
-from db.modules.user import User
+from api.modules.user import User
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 from bson import ObjectId
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext            
 
-from db.client import db_client
-from db.schemas.schemas import show_schemas, show_schema, show_fields
+from infraestructura.db.client import db_client
+from api.schemas.schemas import show_schemas, show_schema, show_fields
 
 
 
@@ -15,8 +15,8 @@ bcrypt = CryptContext(schemes=["bcrypt"])
 oauth2 = OAuth2PasswordBearer(tokenUrl="login")
 
 router = APIRouter(
-    prefix="/usuarios",
-    tags=["usuarios"],
+    prefix="/users",
+    tags=["users"],
     responses={status.HTTP_404_NOT_FOUND: {"message": "No encontrado"}}
 )
 
