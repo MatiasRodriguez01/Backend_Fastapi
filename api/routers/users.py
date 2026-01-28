@@ -1,79 +1,57 @@
-from api.modules.user import User
-from fastapi import APIRouter, HTTPException, status, Depends, Body
-from bson import ObjectId
+from fastapi import APIRouter, status, HTTPException, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext            
+from api.schemas.user_schemas import UserCreate, UserResponse, user_response, users_response
+from aplicacion.use_cases.login_user import LoginUserUseCase
+from aplicacion.use_cases.create_user import CreateUserUseCase
+from infraestructura.repositories.user_repositories_mongo import UserRepositoryMongo
+from aplicacion.security.jwt_handler import create_access_token
 
-from infraestructura.db.client import db_client
-from api.schemas.schemas import show_schemas, show_schema, show_fields
-
-
-
-bcrypt = CryptContext(schemes=["bcrypt"])
-
-oauth2 = OAuth2PasswordBearer(tokenUrl="login")
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
-    responses={status.HTTP_404_NOT_FOUND: {"message": "No encontrado"}}
-)
+    responses={status.HTTP_404_NOT_FOUND: {"description": "No Funciona la Ruta usersTest"}},)
 
-def search_user(field: str, key):
-    try:
-        client_search = db_client.users.find_one({field: key})
-        return User(**show_schema(client_search))
-    except:
-        return {"error": "No se ha encontrado el usuario"}
+
+@router.get("", response_model=list[UserResponse])
+async def get_users():
+    repo = UserRepositoryMongo()
+    use_case = CreateUserUseCase(repo)
+
+    return users_response(use_case.users())
+
+@router.post("/login")
+async def login(form: OAuth2PasswordRequestForm = Depends()):
+    repo = UserRepositoryMongo()
+    use_case = LoginUserUseCase(repo)
+    
+    user = use_case.login(form.username, form.password)
+    
+    return create_access_token(user.username)
 
 @router.post("/register")
-async def register(form: User):
-    user_dict = {
-        "username": form.username,
-        "password": bcrypt.hash(form.password),
-        "email": form.email,
-        "age": form.age
-    }
+async def register(payload: UserCreate):
+    repo = UserRepositoryMongo()
+    use_case = CreateUserUseCase(repo)
 
-    id = db_client.users.insert_one(user_dict).inserted_id
-    return search_user("_id", ObjectId(id))
+    user = use_case.register(
+        username=payload.username,
+        password=payload.password,
+        email=payload.email,
+        age=payload.age
+    )
 
-@router.get("")
-async def clients():
-    users = show_schemas(db_client.users.find())
-    if not users:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="No hay usuarios registrados")
-    return users
+    return create_access_token(user.username)
 
-@router.get("/{id}")
-async def getById(id: str):
-    try: 
-        return search_user("_id", ObjectId(id))
-    except:
-         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+@router.get("/{username}", response_model=UserResponse)
+async def get_user(username: str):
+    repo = UserRepositoryMongo()
+    use_case = CreateUserUseCase(repo)
 
-@router.post("")
-async def create(client: User):
+    user = use_case.show_user(username)
 
-    if search_user("username", client.username):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="El usuario ya existe")
-    
-    user_dict = dict(client)
-    del user_dict["id"]
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
 
-    id = db_client.users.insert_one(user_dict).inserted_id
-    return search_user("_id", ObjectId(id))
-
-
-@router.delete("/{id}")
-async def delete(id: str):
-
-    try:
-        db_client.users.delete_one({"_id": ObjectId(id)})
-        return {"message": "Usuario eliminado correctamente"}
-    except HTTPException as e:
-        return {"error": "No se ha encontrado el usuario"}
-    
-
-
+    return user_response(user)

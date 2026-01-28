@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 SECRET_KEY = "super-secret-key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_DURATION = 5 # minutes
+ACCESS_TOKEN_DURATION = 1 # minutes
 
 crypt = CryptContext(schemes=["bcrypt"])
 
@@ -65,6 +65,17 @@ async def auth_item(token: str = Depends(oauth2)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    expire = payload.get("exp")
+    username = payload.get("sub")
+
+    if expire < datetime.utcnow().timestamp():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="El token ha expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if token is None:
         raise HTTPException( 
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -72,7 +83,7 @@ async def auth_item(token: str = Depends(oauth2)):
             headers={"WWW-Authenticate": "Bearer"},
         ) 
     try:
-        username = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]).get("sub")
+        
         if username is None:
             raise exception
 
@@ -121,7 +132,7 @@ async def login(form: OAuth2PasswordRequestForm = Depends()):
     }
 
     token = jwt.encode(access_token, SECRET_KEY, algorithm=ALGORITHM)
-
+    
     return {
         "access_token": token,
         "token_type": "bearer"
