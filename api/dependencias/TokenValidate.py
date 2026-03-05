@@ -4,8 +4,6 @@ from jose import JWTError, jwt
 from datetime import datetime, timezone
 from infraestructura.security.settings import Settings
 
-from infraestructura.db.mongo_connection import collection
-
 # Con esto extraemos el token JWT desde el header Authorization
 OAUTH2_LOGIN = OAuth2PasswordBearer(
     tokenUrl="login",

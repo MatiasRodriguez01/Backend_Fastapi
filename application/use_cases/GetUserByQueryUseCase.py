@@ -7,6 +7,9 @@ class GetUserByQueryUseCase:
         self.repository = repository
 
     async def execute(self, key: str, value: str) -> Optional[User]:
-        return self.repository.get_by(key= key, value=value)
+
+        user = await self.repository.get_by_query(key= key, value=value)
+        
+        return user if user else None
     
     

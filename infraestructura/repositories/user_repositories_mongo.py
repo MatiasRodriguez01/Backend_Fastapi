@@ -11,7 +11,7 @@ from infraestructura.db.mongo_connection import MongoConnection
 
 crypt = CryptContext(schemes=["bcrypt"])
 
-def user(payload: any) -> Optional[User]:
+def user(payload: dict) -> Optional[User]:
     return User(
                 id=str(payload["_id"]),
                 username=payload["username"],
@@ -30,42 +30,36 @@ class UserRepositoryMongo(UserRepository):
         self.collection = connection.get_collection("users_test")
         
     # Aca devolvemos el usuario por id
-    def get_by_id(self, id) -> Optional[User]:
+    async def get_by_id(self, id) -> Optional[User]:
         
         try:
             # Usamos el ObjectId para encontrarlo en la base de datos
             oid = ObjectId(id)
-            payload = self.collection.find_one({"_id": oid})
+            payload = await self.collection.find_one({"_id": oid})
 
-            if not payload: 
-                return None
-            
-            return user(payload)
+            return User(**payload) if payload else None
         except InvalidId:
             return None
 
     # Aca devolvemos el usuario por query, selecionando la clave y su valor
-    def get_by_query(self, key: str, value: str) -> Optional[User]:
+    async def get_by_query(self, key: str, value: str) -> Optional[User]:
         # Si la clave es por 'id' usamos el objectId
         if key == "id":
             value = ObjectId(value)
-            payload = self.collection.find_one({"_id", value})
+            payload = await self.collection.find_one({"_id": value})
         else:
-            payload = self.collection.find_one({key: value})
+            payload = await self.collection.find_one({key: value})
 
-        if payload is None:
-            return None
-        
-        return user(payload)
+        return User(**payload) if payload else None
 
     # Retornamos una lista de usuarios
-    def users(self) -> list[User]:
-        return [ user(data) for data in self.collection.find() ]
+    async def users(self) -> list[User]:
+        return [ User(**data) for data in await self.collection.find() ]
 
     # Aca creamos un usuario nuevo
-    def create(self, user: User) -> Optional[User]:
+    async def create(self, user: User) -> Optional[User]:
 
-        result = self.collection.insert_one({
+        result = await self.collection.insert_one({
             "username": user.username,
             "password": user.password,
             "email": user.email,
@@ -74,13 +68,13 @@ class UserRepositoryMongo(UserRepository):
         })
 
         user.id = str(result.inserted_id)
-        return user
+        return User(**result) if result else None
 
     # Eliminamos un usuario y devuelve un booleano
-    def delete_user(self, id: str) -> bool:
+    async def delete_user(self, id: str) -> bool:
         oid = ObjectId(id)
         
-        result = self.collection.find_one_and_delete(
+        result = await self.collection.find_one_and_delete(
             {"_id": oid}
         )
 

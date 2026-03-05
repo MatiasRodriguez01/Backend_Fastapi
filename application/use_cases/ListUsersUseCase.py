@@ -7,4 +7,8 @@ class ListUsersUseCase:
         self.repository = repository
 
     async def execute(self) -> list[Optional[User]]:
-        return self.repository.users()
+
+        users = await self.repository.users()
+        if users is not None:
+            return users
+        return []

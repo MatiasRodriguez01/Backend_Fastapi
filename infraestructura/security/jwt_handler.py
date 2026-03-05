@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from jose import jwt
-from application.security.settings import Settings
+from infraestructura.security.settings import Settings
 
 def create_access_token(username: str):
     now = datetime.now(timezone.utc)

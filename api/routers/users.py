@@ -70,7 +70,6 @@ async def get_query(key: str,
                     value: str, 
                     repo: UserRepositoryMongo = Depends(get_user_repository)) -> UserResponse: # Usamos el repositorio de users como dependencia) -> UserResponse: # -------> retornamos un usuario
     try: 
-        repo = UserRepositoryMongo() # Usamos el repositorio de users
         use_case = GetUserByQueryUseCase(repo) # Los usos de casos que podriamos usar
         # Con esta funcion, retornamos el schema 'UserResponse' para no retorna el dominio
         return user_response(await use_case.execute(key, value))
@@ -83,9 +82,7 @@ async def get_query(key: str,
 async def get_by_id(id: str,
                     repo: UserRepositoryMongo = Depends(get_user_repository)) -> UserResponse:
     try: 
-        repo = UserRepositoryMongo() # Usamos el repositorio de users
         use_case = GetUserByIdUseCase(repo) # Los usos de casos que podriamos usar
-
         return user_response(await use_case.execute(id))
     except: 
         raise EXCEPTION_USER
@@ -95,7 +92,6 @@ async def get_by_id(id: str,
 @router.delete("/{id}",  dependencies = [Depends(required_auth)])
 async def delete_user(id: str,
                       repo: UserRepositoryMongo = Depends(get_user_repository)) -> None: # -------> No retornamos nada porque es un DELETE
-    repo = UserRepositoryMongo() # Usamos el repositorio de users
     use_case = DeleteUserUseCase(repo) # Los usos de casos que podriamos usar
     # Con la funcion delete_user retornamos un booleano si lo elimino mostrara un mensaje,
     if await use_case.execute(id):

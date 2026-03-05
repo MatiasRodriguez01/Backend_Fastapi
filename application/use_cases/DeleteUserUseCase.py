@@ -7,4 +7,4 @@ class DeleteUserUseCase:
         self.repository = repository
 
     async def execute(self, id: str) -> bool:
-        return self.repository.delete_user(id)
+        return await self.repository.delete_user(id)

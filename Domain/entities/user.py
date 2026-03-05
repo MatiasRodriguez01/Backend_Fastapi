@@ -1,4 +1,4 @@
-from Domain.value_objects.role import RoleUser
+from domain.value_objects.role import RoleUser
 
 class User:
     def __init__(self, 

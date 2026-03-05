@@ -1,4 +1,4 @@
-from application.security.pass_hasher import hash_password
+from infraestructura.security.pass_hasher import hash_password
 from typing import Optional
 
 from domain.repositories.user_repository import UserRepository

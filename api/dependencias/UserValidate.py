@@ -1,8 +1,9 @@
 from fastapi import HTTPException, status
 
 from api.schemas.user_schemas import UserCreate
-from infraestructura.db.mongo_connection import collection
+from infraestructura.db.mongo_connection import MongoConnection
 
+collection = MongoConnection(uri="mongodb://localhost:27017", db_name="users_test").get_collection("users")
 
 # AQUI VAMOS A EVALUAR SI EL USUARIO INGRESADO SE PUEDE REGISTRAR
 async def validate_user_fields(user: UserCreate):
