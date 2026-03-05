@@ -90,7 +90,7 @@ async def auth_item(token: str = Depends(oauth2)):
     except JWTError:
         raise exception
 
-    return search(username)
+    return username
 
 async def current_item(item: Item = Depends(auth_item)):
     if not item:

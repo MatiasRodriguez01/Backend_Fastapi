@@ -1,57 +1,102 @@
-from fastapi import APIRouter, status, HTTPException, Depends
+from fastapi import APIRouter, status, HTTPException, Depends, dependencies
 from fastapi.security import OAuth2PasswordRequestForm
 
 from api.schemas.user_schemas import UserCreate, UserResponse, user_response, users_response
-from aplicacion.use_cases.login_user import LoginUserUseCase
-from aplicacion.use_cases.create_user import CreateUserUseCase
+
+from application.use_cases.GetUserByIdUseCase import GetUserByIdUseCase
+from application.use_cases.GetUserByQueryUseCase import GetUserByQueryUseCase
+from application.use_cases.ListUsersUseCase import ListUsersUseCase
+from application.use_cases.LoginUserUseCase import LoginUserUseCase
+from application.use_cases.RegisterUserUseCase import RegisterUserUseCase
+from application.use_cases.DeleteUserUseCase import DeleteUserUseCase
+
 from infraestructura.repositories.user_repositories_mongo import UserRepositoryMongo
-from aplicacion.security.jwt_handler import create_access_token
+from infraestructura.security.jwt_handler import create_access_token
+from api.dependecias import  required_auth, validate_user_fields
 
-
+# con esto logramos configurar el ROUTER
+# Le damos una ruta escrita por defecto que es 'localhost:8000/users'
+# Las tags donde se ve en la documentacion
+# Y un error por defecto si la ruta no funciona
 router = APIRouter(
     prefix="/users",
     tags=["users"],
     responses={status.HTTP_404_NOT_FOUND: {"description": "No Funciona la Ruta usersTest"}},)
 
+# Asignamos una excepcion para no repetirla
+EXCEPTION_USER = HTTPException(status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
 
-@router.get("", response_model=list[UserResponse])
-async def get_users():
-    repo = UserRepositoryMongo()
-    use_case = CreateUserUseCase(repo)
-
-    return users_response(use_case.users())
-
+# Con esta ruta, hacemos el login para optener un token de acceso
+# Recibe un formulario con el 'username' y el 'password'
 @router.post("/login")
 async def login(form: OAuth2PasswordRequestForm = Depends()):
-    repo = UserRepositoryMongo()
-    use_case = LoginUserUseCase(repo)
-    
+    repo = UserRepositoryMongo() # Usamos el repositorio de users
+    use_case = LoginUserUseCase(repo) # Los usos de casos que podriamos usar
+    # Optenemos el usuario completo con la funcion de login
     user = use_case.login(form.username, form.password)
-    
+    # Y creamos el token de acceso con esta funcion usando el 'username'
     return create_access_token(user.username)
 
+# Con esta ruta, hacemos el register para crear un usuario nuevo
+# Recibe el payload, donde estas los campos necesarios para crear un usuario
 @router.post("/register")
-async def register(payload: UserCreate):
-    repo = UserRepositoryMongo()
-    use_case = CreateUserUseCase(repo)
-
+async def register(payload: UserCreate = Depends(validate_user_fields)):
+    repo = UserRepositoryMongo() # Usamos el repositorio de users
+    use_case = RegisterUserUseCase(repo) # Los usos de casos que podriamos usar
+    # Creamos el usuario y lo optenemos 
     user = use_case.register(
         username=payload.username,
         password=payload.password,
         email=payload.email,
         age=payload.age
     )
-
+    # Y creamos el token de acceso con esta funcion usando el 'username'
     return create_access_token(user.username)
 
-@router.get("/{username}", response_model=UserResponse)
-async def get_user(username: str):
-    repo = UserRepositoryMongo()
-    use_case = CreateUserUseCase(repo)
+# Con esta ruta optenemos Todos los usuarios, y asignamos una dependencia para que el usuario
+# Ingrese un token de acceso
+@router.get("", dependencies = [Depends(required_auth)])
+async def get_users() -> list[UserResponse]: # -------> retornamos una lista de usuarios
+    repo = UserRepositoryMongo() # Usamos el repositorio de users
+    use_case = ListUsersUseCase(repo) # Los usos de casos que podriamos usar
+    # Con esta funcion, retornamos una lista con el schema 'UserResponse' para no retorna los dominios
+    return users_response(use_case.users())
 
-    user = use_case.show_user(username)
+# Con esta funcion 'query' retornamos un usuario por 'key', y su valor correspondiente
+@router.get("", dependencies = [Depends(required_auth)])
+async def get_query(key: str, value: str) -> UserResponse: # -------> retornamos un usuario
+    try: 
+        repo = UserRepositoryMongo() # Usamos el repositorio de users
+        use_case = GetUserByQueryUseCase(repo) # Los usos de casos que podriamos usar
+        # Con esta funcion, retornamos el schema 'UserResponse' para no retorna el dominio
+        return user_response(use_case.get_by_query(key, value))
+    # Si no optenemos el usuario retornamos una excepcion
+    except:
+        raise EXCEPTION_USER
 
-    if user is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
 
-    return user_response(user)
+@router.get("/{id}", dependencies = [Depends(required_auth)])
+async def get_by_id(id: str) -> UserResponse:
+    try: 
+        repo = UserRepositoryMongo() # Usamos el repositorio de users
+        use_case = GetUserByIdUseCase(repo) # Los usos de casos que podriamos usar
+
+        return user_response(use_case.get_by_id(id))
+    except: 
+        raise EXCEPTION_USER
+
+
+# Con Esta ruta Eliminamos un usuario de la BD
+@router.delete("/{id}",  dependencies = [Depends(required_auth)])
+async def delete_user(id: str) -> None: # -------> No retornamos nada porque es un DELETE
+    repo = UserRepositoryMongo() # Usamos el repositorio de users
+    use_case = DeleteUserUseCase(repo) # Los usos de casos que podriamos usar
+    # Con la funcion delete_user retornamos un booleano si lo elimino mostrara un mensaje,
+    if use_case.delete_user(id):
+        return HTTPException(
+            status_code=status.HTTP_200_OK, 
+            detail="Usuario eliminado correctamente"
+            )
+    # Sino retornamos un error
+    else:
+        raise EXCEPTION_USER
