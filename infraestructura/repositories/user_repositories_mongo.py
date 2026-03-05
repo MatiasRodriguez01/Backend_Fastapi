@@ -24,7 +24,7 @@ def user(payload: any) -> Optional[User]:
 class UserRepositoryMongo(UserRepository):
 
     # Hacemos una superclase de UserRepository
-    # Que contiene una funcines de UserRepository, y una collection para la base de datos
+    # Que contiene una funcines de UserRepository, y una collection (local de la clase) para la base de datos
     def __init__(self, connection: MongoConnection):
         super().__init__(),
         self.collection = connection.get_collection("users_test")

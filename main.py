@@ -1,8 +1,7 @@
 from fastapi import FastAPI, Depends, dependencies
 from api.routers import authentication, users
-from jose import ExpiredSignatureError
 
-from api.dependecias import required_auth
+from api.dependencias.TokenValidate import required_auth
 
 app = FastAPI()
 
