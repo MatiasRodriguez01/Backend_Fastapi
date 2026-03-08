@@ -38,7 +38,10 @@ async def login(form: OAuth2PasswordRequestForm = Depends(),
     # Optenemos el usuario completo con la funcion de login
     user = await use_case.execute(form.username, form.password)
     # Y creamos el token de acceso con esta funcion usando el 'username'
-    return create_access_token(user.username)
+    print("USUARIO: ", user)
+    if user: 
+        return create_access_token(user.username)
+    raise EXCEPTION_USER
 
 # Con esta ruta, hacemos el register para crear un usuario nuevo
 # Recibe el payload, donde estas los campos necesarios para crear un usuario
@@ -62,30 +65,33 @@ async def register(payload: UserCreate = Depends(validate_user_fields),
 async def get_users(repo: UserRepositoryMongo = Depends(get_user_repository)) -> list[UserResponse]: # Usamos el repositorio de users como dependencia) -> list[UserResponse]: # -------> retornamos una lista de usuarios
     use_case = ListUsersUseCase(repo) # Los usos de casos que podriamos usar
     # Con esta funcion, retornamos una lista con el schema 'UserResponse' para no retorna los dominios
-    return users_response(await use_case.execute())
+    users = await use_case.execute()
+    return users_response(users)
 
 # Con esta funcion 'query' retornamos un usuario por 'key', y su valor correspondiente
 @router.get("/query", dependencies = [Depends(required_auth)])
 async def get_query(key: str, 
                     value: str, 
                     repo: UserRepositoryMongo = Depends(get_user_repository)) -> UserResponse: # Usamos el repositorio de users como dependencia) -> UserResponse: # -------> retornamos un usuario
-    try: 
-        use_case = GetUserByQueryUseCase(repo) # Los usos de casos que podriamos usar
-        # Con esta funcion, retornamos el schema 'UserResponse' para no retorna el dominio
-        return user_response(await use_case.execute(key, value))
+   
+    use_case = GetUserByQueryUseCase(repo) # Los usos de casos que podriamos usar
+    # Con esta funcion, retornamos el schema 'UserResponse' para no retorna el dominio
+    user = await use_case.execute(key, value)
+    if user:
+        return user_response(user)
     # Si no optenemos el usuario retornamos una excepcion
-    except:
-        raise EXCEPTION_USER
+    raise EXCEPTION_USER
 
 
 @router.get("/{id}", dependencies = [Depends(required_auth)])
 async def get_by_id(id: str,
                     repo: UserRepositoryMongo = Depends(get_user_repository)) -> UserResponse:
-    try: 
-        use_case = GetUserByIdUseCase(repo) # Los usos de casos que podriamos usar
-        return user_response(await use_case.execute(id))
-    except: 
-        raise EXCEPTION_USER
+    use_case = GetUserByIdUseCase(repo) # Los usos de casos que podriamos usar
+    user = await use_case.execute(id)
+
+    if user: 
+        return user_response(user)
+    raise EXCEPTION_USER
 
 
 # Con Esta ruta Eliminamos un usuario de la BD
@@ -94,7 +100,8 @@ async def delete_user(id: str,
                       repo: UserRepositoryMongo = Depends(get_user_repository)) -> None: # -------> No retornamos nada porque es un DELETE
     use_case = DeleteUserUseCase(repo) # Los usos de casos que podriamos usar
     # Con la funcion delete_user retornamos un booleano si lo elimino mostrara un mensaje,
-    if await use_case.execute(id):
+    condition = await use_case.execute(id)
+    if condition:
         return {"detail": "Usuario eliminado correctamente"}
     # Sino retornamos un error
     else:

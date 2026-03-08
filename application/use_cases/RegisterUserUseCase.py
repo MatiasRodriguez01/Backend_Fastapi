@@ -22,4 +22,6 @@ class RegisterUserUseCase:
             age=age
         )
 
-        return self.repository.create(user)
+        user_registered = await self.repository.create(user)
+
+        return user_registered if user_registered else None

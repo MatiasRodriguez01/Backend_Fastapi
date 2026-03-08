@@ -10,6 +10,8 @@ class GetUserByQueryUseCase:
 
         user = await self.repository.get_by_query(key= key, value=value)
         
-        return user if user else None
+        if user:
+            return True
+        return False
     
     

@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from api.schemas.user_schemas import UserCreate
 from infraestructura.db.mongo_connection import MongoConnection
 
-collection = MongoConnection(uri="mongodb://localhost:27017", db_name="users_test").get_collection("users")
+collection = MongoConnection(uri="mongodb://localhost:27017", db_name="local").get_collection("users")
 
 # AQUI VAMOS A EVALUAR SI EL USUARIO INGRESADO SE PUEDE REGISTRAR
 async def validate_user_fields(user: UserCreate):
@@ -36,7 +36,8 @@ async def validate_user_fields(user: UserCreate):
     # Verificamos si los campos que recibe la ruta esta repetidos
     for key, value in data.items():
         # Menos la edad, id y el role esos no se evaluan
-        if key != "id" and key != "age" and collection.find_one({key: value}):        
+        payload = await collection.find_one({key: value})
+        if key != "id" and key != "age" and payload:        
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"El usuario Existe, el '{key}': '{value}' se esta usando",

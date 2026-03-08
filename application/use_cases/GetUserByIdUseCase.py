@@ -8,4 +8,7 @@ class GetUserByIdUseCase:
 
     async def execute(self, id: str) -> Optional[User]:
         user = await self.repository.get_by_id(id)
-        return user if user else None
+        
+        if user:
+            return user
+        return None
