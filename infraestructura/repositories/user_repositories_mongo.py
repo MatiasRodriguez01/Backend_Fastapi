@@ -1,15 +1,30 @@
+# Dependencias necesarias:
+# - Entidad de dominio que representa al usuario
+# - Interfaz abstracta de repositorio de usuarios
+# - Función para obtener la colección MongoDB
+# - Tipado opcional y listas para mayor claridad
+# - ObjectId de bson para trabajar con identificadores de MongoDB
+# - CryptContext de passlib para encriptar y verificar contraseñas
+
 from domain.entities.user import User
 from domain.repositories.user_repository import UserRepository
 
-from passlib.context import CryptContext
-from typing import Optional
+from infraestructura.db.mongo_connection import MongoConnection
 
 from bson.objectid import ObjectId 
 from bson.errors import InvalidId
 
-from infraestructura.db.mongo_connection import MongoConnection
+from typing import Optional
+from passlib.context import CryptContext
+
+
 
 crypt = CryptContext(schemes=["bcrypt"])
+
+# user_repositories_mongo.py
+# Implementación concreta del repositorio de usuarios utilizando MongoDB.
+# Extiende la interfaz UserRepository definida en Domain/repositories/user_repository.py.
+# Contiene las operaciones CRUD (crear, leer, eliminar) sobre la colección de usuarios.
 
 def user(payload: any) -> User:
     return User(
@@ -22,18 +37,26 @@ def user(payload: any) -> User:
             )
 
 class UserRepositoryMongo(UserRepository):
+    """
+    Implementación del repositorio de usuarios en MongoDB.
+    """
 
-    # Hacemos una superclase de UserRepository
-    # Que contiene una funcines de UserRepository, y una collection (local de la clase) para la base de datos
     def __init__(self, connection: MongoConnection):
         super().__init__(),
         self.collection = connection.get_collection("users")
         
-    # Aca devolvemos el usuario por id
+    async def users(self) -> list[User]:
+        """
+        Devuelve la lista de todos los usuarios registrados.
+        """
+        cursor = self.collection.find({})
+        return [ user(data) async for data in cursor]
+    
     async def get_by_id(self, id: str) -> Optional[User]:
-        
+        """
+        Obtiene un usuario por su identificador único.
+        """
         try:
-            # Usamos el ObjectId para encontrarlo en la base de datos
             oid = ObjectId(id)
             payload = await self.collection.find_one({"_id": oid})
 
@@ -43,10 +66,11 @@ class UserRepositoryMongo(UserRepository):
         except InvalidId:
             return None
 
-    # Aca devolvemos el usuario por query, selecionando la clave y su valor
     async def get_by_query(self, key: str, value: str) -> Optional[User]:
-        print([key, value])
-        # Si la clave es por 'id' usamos el objectId
+        """
+        Busca un usuario filtrando por un campo específico.
+        Ejemplo: key="email", value="test@mail.com".
+        """
         if key == "id":
             value = ObjectId(value)
             payload = await self.collection.find_one({"_id": value})
@@ -55,18 +79,14 @@ class UserRepositoryMongo(UserRepository):
 
         if payload:
             return user(payload)
-        
         return None
 
-    # Retornamos una lista de usuarios
-    async def users(self) -> list[User]:
-        # optener todos los usuarios de la base de datos
-        cursor = self.collection.find({})
-        
-        return [ user(data) async for data in cursor]
 
-    # Aca creamos un usuario nuevo
     async def create(self, user: User) -> Optional[User]:
+        """
+        Crea un nuevo usuario en el repositorio.
+        Retorna el usuario creado o None si falla.
+        """
 
         result = await self.collection.insert_one({
             "username": user.username,
@@ -79,17 +99,22 @@ class UserRepositoryMongo(UserRepository):
         user.id = str(result.inserted_id)
         return user
 
-    # Eliminamos un usuario y devuelve un booleano
     async def delete_user(self, id: str) -> bool:
-        oid = ObjectId(id)
+        """
+        Elimina un usuario por su ID.
+        Retorna True si la operación fue exitosa, False en caso contrario.
+        """
+        try:
+            oid = ObjectId(id)        
+            result = await self.collection.find_one_and_delete(
+                {"_id": oid}
+            )
         
-        result = await self.collection.find_one_and_delete(
-            {"_id": oid}
-        )
-        
-        if result: 
-            return result
-        return None
+            if result: 
+                return result
+            return None
+        except InvalidId:
+            return None
     
         
 

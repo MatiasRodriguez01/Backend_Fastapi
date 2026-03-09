@@ -1,5 +1,7 @@
+# Importamos RoleUser para asignar Roles a los usuarios
 from domain.value_objects.role import RoleUser
 
+# Dominio
 class User:
     def __init__(self, 
                  username: str, 

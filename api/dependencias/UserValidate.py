@@ -1,47 +1,54 @@
-from fastapi import HTTPException, status
+# Dependencias necesarias:
+# - api.schemas.user_schemas (para validación de modelos)
+# - fastapi.HTTPException y status (para devolver errores claros)
+# - infraestructura.db.mongo_connection (para acceder brevemente a la BD)
 
+from fastapi import HTTPException, status
 from api.schemas.user_schemas import UserCreate
 from infraestructura.db.mongo_connection import MongoConnection
 
 collection = MongoConnection(uri="mongodb://localhost:27017", db_name="local").get_collection("users")
 
-# AQUI VAMOS A EVALUAR SI EL USUARIO INGRESADO SE PUEDE REGISTRAR
+# UserValidate.py
+# Dependencia para validar campos de usuario en operaciones de registro.
+# - Verifica formato de email, longitud de edad.
+# - Lanza excepciones HTTP si los datos no cumplen los requisitos.
+# Se utiliza en el endpoint de /register para asegurar integridad de datos.
+  
 async def validate_user_fields(user: UserCreate):
-    # Con el 'metodo model_dump()' abstraemos los items del usuario
-    data = user.model_dump()
+    data = user.model_dump() # Abstraemos los items del ojeto
     
-    # Con este for, verificamos si todos los campos esta requeridos
-    # menos el id, porque lo genera la misma collecion de la BD
+    # recorremos cada 'item' y su valor
     for key, value in data.items():
-        if key != "id" and value is "":
+        if key != "id" and value is "": # El id no sera requerido y el valor no puede estar vacio
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"El campo '{key}' es obligatorio",
                 headers={"WWW-Authenticate": "Bearer"}
             )
-        # Evaluamos si el formato de email, es correcto
-        if (key == "email") and ("@" not in value or "." not in value):
+        if (key == "email") and ("@" not in value or "." not in value): # Evaluamos si el formato de email, es correcto
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"El Email ingresado es Invalido",
                 headers={"WWW-Authenticate": "Bearer"}
             )
-        # Y verificamos si la edad no es negativa
-        if key == "age" and value <= 0:
+        if key == "age" and value <= 0: # Y verificamos si la edad no es negativa
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"La Edad No Debe Ser Negativa",
                 headers={"WWW-Authenticate": "Bearer"}
             )
-    # Verificamos si los campos que recibe la ruta esta repetidos
+
+    # Verificamos valores repeditos repetidos
+    keys = ["id", 'age'] # campos que no se evaluaran
+
     for key, value in data.items():
-        # Menos la edad, id y el role esos no se evaluan
         payload = await collection.find_one({key: value})
-        if key != "id" and key != "age" and payload:        
+        if key not in keys and payload:  # Evaluaran si algun campo esta repetido en la base de datos
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"El usuario Existe, el '{key}': '{value}' se esta usando",
                 headers={"WWW-Authenticate": "Bearer"}
             )
-    # Si todo esta bien la dependencia retorna el usuario ingresado
+
     return user
