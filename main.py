@@ -1,9 +1,11 @@
-from fastapi import FastAPI, Depends, dependencies
-from api.routers import authentication, users
+# Dependencias necesarias:
+# - fastapi (para levantar el servidor)
+# - api.routers (para importar las rutas)
+from fastapi import FastAPI
+from api.routers import users
 
-from api.dependencias.TokenValidate import required_auth
+# main.py
+# Levantemos la API en este archivo, y incluimos sus rutas
+app = FastAPI() 
 
-app = FastAPI()
-
-app.include_router(authentication.router)
 app.include_router(users.router)
