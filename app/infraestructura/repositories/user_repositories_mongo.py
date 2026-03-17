@@ -9,9 +9,12 @@
 from ...domain.entities.user import User
 from ...domain.repositories.user_repository import UserRepository
 
+from pymongo.results import InsertOneResult, UpdateResult, DeleteResult
+
 from ...api.schemas.user_schemas import UserUpdate
 
 from ...infraestructura.db.mongo_connection import MongoConnection
+from ...infraestructura.schema_mongoDB.user_schema_mongo import UserDB
 
 from bson.objectid import ObjectId 
 from bson.errors import InvalidId
@@ -26,7 +29,7 @@ crypt = CryptContext(schemes=["bcrypt"])
 # Extiende la interfaz UserRepository definida en Domain/repositories/user_repository.py.
 # Contiene las operaciones CRUD (crear, leer, eliminar) sobre la colección de usuarios.
 
-def user(payload: any) -> User: # Creamos objetos de tipo 'User'
+def user(payload: UserDB) -> User: # Creamos objetos de tipo 'User'
     return User(
                 id=str(payload["_id"]),
                 username=payload["username"],
@@ -59,9 +62,9 @@ class UserRepositoryMongo(UserRepository):
         """
         if key == "id":
             value = ObjectId(value)
-            payload = await self.collection.find_one({"_id": value})
+            payload: UserDB = await self.collection.find_one({"_id": value})
         else:
-            payload = await self.collection.find_one({key: value})
+            payload: UserDB = await self.collection.find_one({key: value})
 
         if payload:
             return user(payload)
@@ -74,14 +77,14 @@ class UserRepositoryMongo(UserRepository):
         Retorna el usuario creado o None si falla.
         """
 
-        result = await self.collection.insert_one({
+        result: InsertOneResult = await self.collection.insert_one({
             "username": user.username,
             "password": user.password,
             "email": user.email,
             "role": user.role,
             "age": user.age
         })
-
+        
         user.id = str(result.inserted_id)
         return user
 
@@ -93,7 +96,7 @@ class UserRepositoryMongo(UserRepository):
         try:
             # buscamos el usuario
             object_id = ObjectId(id)
-            existing = await self.collection.find_one({"_id": object_id})
+            existing: UserDB = await self.collection.find_one({"_id": object_id})
             
             # Convertir payload a dict
             new_data: dict = payload.model_dump()
@@ -104,12 +107,12 @@ class UserRepositoryMongo(UserRepository):
                     new_data[key] = existing.get(key)
 
             # Actualizar en la base de datos
-            await self.collection.update_one(
+            updated_user: UpdateResult = await self.collection.update_one(
                 {"_id": object_id},
                 {"$set": new_data}
             )
 
-            updated = await self.collection.find_one({"_id": object_id})
+            updated: UserDB = await self.collection.find_one({"_id": object_id})
             if updated is None:
                 return None
             return user(updated)
@@ -124,7 +127,7 @@ class UserRepositoryMongo(UserRepository):
         """
         try:
             object_id = ObjectId(id)
-            user_updated = await self.collection.update_one(
+            user_updated: UserDB = await self.collection.update_one(
                 {"_id": object_id},
                 {"$set": {
                     "password": password
@@ -141,7 +144,7 @@ class UserRepositoryMongo(UserRepository):
         """
         try:
             oid = ObjectId(id)        
-            result = await self.collection.find_one_and_delete(
+            result: UserDB = await self.collection.find_one_and_delete(
                 {"_id": oid}
             )
         

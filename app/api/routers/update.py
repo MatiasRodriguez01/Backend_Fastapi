@@ -7,7 +7,7 @@ from ...infraestructura.repositories.user_repositories_mongo import UserReposito
 from ...application.use_cases.UpdateUserUseCase import UpdateUserUseCase
 from ...application.use_cases.GetUserByQueryUseCase import GetUserByQueryUseCase
 
-from ..dependencias.GetCollection import get_user_repository
+from ..dependencias.GetCollection import get_collection
 from ..dependencias.UserValidate import  validate_user_fields 
 from ..dependencias.TokenValidate import  required_auth
 
@@ -23,7 +23,7 @@ router = APIRouter(
 @router.put("/{id}", dependencies=[Depends(required_auth)])
 async def update_user(id: str, 
                       user: UserCreate,
-                      repo: UserRepositoryMongo = Depends(get_user_repository)) -> UserResponse:
+                      repo: UserRepositoryMongo = Depends(get_collection)) -> UserResponse:
 
     use_case = UpdateUserUseCase(repo)
     new_user: User = await use_case.execute(id, user)

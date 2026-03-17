@@ -6,10 +6,14 @@
 from fastapi import HTTPException, status
 from ...api.schemas.user_schemas import UserCreate
 from ...infraestructura.db.mongo_connection import MongoConnection
+from ...infraestructura.security.Settings import Settings
 
 from bson.objectid import ObjectId
 
-collection = MongoConnection(uri="mongodb://localhost:27017", db_name="local").get_collection("users")
+URL = Settings().MONGODB_URL
+DB_NAME = Settings().DATABASE
+#mongodb://matias_01:wEdtGgtzVf3vZhiT@ac-cfgjuuh-shard-00-01.m62gvbp.mongodb.net,ac-cfgjuuh-shard-00-00.m62gvbp.mongodb.net,ac-cfgjuuh-shard-00-02.m62gvbp.mongodb.net/?replicaSet=atlas-ydrdwl-shard-0&tls=true&authSource=admin
+collection = MongoConnection(uri=URL, db_name=DB_NAME).get_collection("users")
 
 # UserValidate.py
 # Dependencia para validar campos de usuario en operaciones de registro.

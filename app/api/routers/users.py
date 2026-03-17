@@ -23,7 +23,7 @@ from ...application.use_cases.UpdatePasswordUserUseCase import UpdatePasswordUse
 # Repositorio:
 # - UserRepositoryMongo: acceso a MongoDB | get_user_repository: obtiene repositorio
 from ...infraestructura.repositories.user_repositories_mongo import UserRepositoryMongo
-from ...api.dependencias.GetCollection import  get_user_repository 
+from ...api.dependencias.GetCollection import  get_collection 
 
 
 # Dependencias Creadas:
@@ -57,7 +57,7 @@ router = APIRouter(
 # Salida: Token JWT de acceso
 @router.post("/login")
 async def login(form: OAuth2PasswordRequestForm = Depends(),
-                repo: UserRepositoryMongo = Depends(get_user_repository)):
+                repo: UserRepositoryMongo = Depends(get_collection)):
     try:
         use_case = LoginUserUseCase(repo)
         user: User = await use_case.execute(form.username, form.password)
@@ -71,7 +71,7 @@ async def login(form: OAuth2PasswordRequestForm = Depends(),
 # Salida: Token JWT de acceso
 @router.post("/register")
 async def register(payload: UserCreate = Depends(validate_user_fields),
-                   repo: UserRepositoryMongo = Depends(get_user_repository)):
+                   repo: UserRepositoryMongo = Depends(get_collection)):
     use_case = RegisterUserUseCase(repo)
     user: User = await use_case.execute(
         username=payload.username,
@@ -86,7 +86,7 @@ async def register(payload: UserCreate = Depends(validate_user_fields),
 # Requiere autenticación (token JWT).
 # Salida: Lista de usuarios en formato UserResponse
 @router.get("", dependencies=[Depends(required_auth)])
-async def get_users(repo: UserRepositoryMongo = Depends(get_user_repository)) -> list[UserResponse]:
+async def get_users(repo: UserRepositoryMongo = Depends(get_collection)) -> list[UserResponse]:
     use_case = ListUsersUseCase(repo)
     users: list[User] = await use_case.execute()
     return users_response(users)
@@ -97,7 +97,7 @@ async def get_users(repo: UserRepositoryMongo = Depends(get_user_repository)) ->
 # Salida: Usuario en formato UserResponse
 @router.get("/query", dependencies=[Depends(required_auth)])
 async def get_query(key: str, value: str,
-                    repo: UserRepositoryMongo = Depends(get_user_repository)) -> UserResponse:
+                    repo: UserRepositoryMongo = Depends(get_collection)) -> UserResponse:
     try:
         use_case = GetUserByQueryUseCase(repo)
         user: User = await use_case.execute(key, value)
@@ -111,7 +111,7 @@ async def get_query(key: str, value: str,
 # Salida: Usuario en formato UserResponse
 @router.get("/{id}", dependencies=[Depends(required_auth)])
 async def get_by_id(id: str, 
-                    repo: UserRepositoryMongo = Depends(get_user_repository)) -> UserResponse:
+                    repo: UserRepositoryMongo = Depends(get_collection)) -> UserResponse:
     try:
         use_case = GetUserByQueryUseCase(repo)
         # Como es generica la funcion, ingresao el campo 'id' como key, y el valor del id a buscar
@@ -127,7 +127,7 @@ async def get_by_id(id: str,
 @router.put("/{id}")#, dependencies=[Depends(required_auth)])
 async def update_user(user: UserUpdate,
                       id: str = Depends(user_search), 
-                      repo: UserRepositoryMongo = Depends(get_user_repository)) -> UserResponse:
+                      repo: UserRepositoryMongo = Depends(get_collection)) -> UserResponse:
 
     use_case = UpdateUserUseCase(repo)
     new_user: User = await use_case.execute(id, user)
@@ -142,7 +142,7 @@ async def update_user(user: UserUpdate,
 @router.patch("/{id}")
 async def update_password(password: str, 
                           id: str = Depends(user_search),
-                          repo: UserRepositoryMongo = Depends(get_user_repository)):
+                          repo: UserRepositoryMongo = Depends(get_collection)):
     use_case = UpdatePasswordUserUseCase(repo)
     user: User = await use_case.execute(id, password)
 
@@ -159,7 +159,7 @@ async def update_password(password: str,
 # Salida: Mensaje de confirmación o excepción si no existe
 @router.delete("/{id}", dependencies=[Depends(required_auth)])
 async def delete_user(id: str,
-                      repo: UserRepositoryMongo = Depends(get_user_repository)):
+                      repo: UserRepositoryMongo = Depends(get_collection)):
     use_case = DeleteUserUseCase(repo)
     condition: bool = await use_case.execute(id)
 

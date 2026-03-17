@@ -12,7 +12,7 @@ import os
 # Contiene la clave secreta, el algoritmo de firma y el tiempo de expiración de los tokens.
 
 load_dotenv()
-class Settings:
+class Settings():
     """
     Clase de configuración para seguridad y autenticación.
     - SECRET_KEY: clave secreta usada para firmar los JWT.
@@ -25,5 +25,20 @@ class Settings:
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")  # por defecto 'HS256'
     ACCESS_TOKEN_DURATION: int = os.getenv("ACCESS_TOKEN_DURATION", 5)  # por defecto 5 minutos
     ENV: str = os.getenv("ENVIRONMENT", "development")  # por defecto 'development'
-
+    USERNAME: str = os.getenv("USERNAME", "matias_01")
+    PASSWORD: str = os.getenv("PASSWORD", "wEdtGgtzVf3vZhiT")
+    DATABASE: str = os.getenv("DATABASE", "users")
+    ROLE: str = os.getenv("ROLE", "admin")
+    MONGODB_URL: str = os.getenv("MONGODB_URL", f"mongodb://matias_01:wEdtGgtzVf3vZhiT@ac-cfgjuuh-shard-00-01.m62gvbp.mongodb.net,ac-cfgjuuh-shard-00-00.m62gvbp.mongodb.net,ac-cfgjuuh-shard-00-02.m62gvbp.mongodb.net/?replicaSet=atlas-ydrdwl-shard-0&tls=true&authSource=admin")
+    """
+    MONGODB_URL: str = os.getenv("MONGODB_URL", f"mongodb://{USERNAME}:{PASSWORD}@ac-cfgjuuh-shard-00-01.m62gvbp.mongodb.net,ac-cfgjuuh-shard-00-00.m62gvbp.mongodb.net,ac-cfgjuuh-shard-00-02.m62gvbp.mongodb.net/?replicaSet=atlas-ydrdwl-shard-0&tls=true&authSource={ROLE}")
+    def MONGO_URI(self) -> str:
+        return (
+            f"mongodb://{self.USERNAME}:{self.PASSWORD}"
+            f"@ac-cfgjuuh-shard-00-01.m62gvbp.mongodb.net,"
+            f"ac-cfgjuuh-shard-00-00.m62gvbp.mongodb.net,"
+            f"ac-cfgjuuh-shard-00-02.m62gvbp.mongodb.net/"
+            f"{self.DATABASE}?replicaSet=atlas-ydrdwl-shard-0&tls=true&authSource={self.ROLE}"
+        )
+    """
 
