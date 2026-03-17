@@ -1,8 +1,7 @@
 # Dependencias necesarias:
 # - motor.motor_asyncio.AsyncIOMotorClient: cliente asíncrono para MongoDB.
 
-from pymongo.asynchronous.mongo_client import AsyncMongoClient
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 # mongo_connection.py
 # Archivo encargado de establecer la conexión con MongoDB.
@@ -15,7 +14,7 @@ class MongoConnection:
         self.client = AsyncIOMotorClient(uri)
         self.db = self.client[db_name]
 
-    def get_collection(self, name: str):
+    def get_collection(self, name: str) -> AsyncIOMotorCollection:
         """Devuelve una colección específica de la base de datos."""
         return self.db[name]
 
